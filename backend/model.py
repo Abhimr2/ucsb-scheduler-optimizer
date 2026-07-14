@@ -1,9 +1,60 @@
+from itertools import product
+
+class Scheduler:
+    def __init__(self, courses):
+        self.courses = courses
+    
+    def generate_schedules(self):
+        allOptions = []
+        
+        for course in self.courses:
+            allOptions.append(course.create_options())
+        
+        allSchedules = []
+        allSchedules = list(product(*allOptions))
+
+        expected = 2 * 2 * 1 * 1
+        actual = len(allSchedules)
+
+        validSchedules = []
+
+        for schedule in allSchedules:
+            val = self.schedule_is_valid(schedule)
+
+            if val == True:
+                validSchedules.append(schedule)
+        
+        correct = len(validSchedules)
+
+        print("Expected raw schedules:", expected)
+        print("Actual raw schedules:", actual)
+        print("Valid schedules:", correct)
+    
+    def schedule_is_valid(self, schedule):
+        for i in range(len(schedule)):
+            for j in range(i + 1, len(schedule)):
+                if option_conflicts(schedule[i], schedule[j]):
+                    return False
+
+        return True
+
+ 
 class Course:
-    def __init__(self, name, code, meetings):
+    def __init__(self, name, code, lectures, sections):
         self.name = name
         self.code = code
-        self.meetings = meetings
+        self.lectures = lectures
+        self.sections = sections
     
+    def create_options(self):
+        options = []
+
+        for lecture in self.lectures:
+            for section in self.sections:
+                options.append([lecture, section])
+
+        return options
+
     def print_course(self):
         for block in self.meetings:
             
@@ -75,49 +126,10 @@ def time_conflicts(meeting_a, meeting_b):
 
     return meeting_a.startTime < meeting_b.endTime and meeting_b.startTime < meeting_a.endTime
 
-def section_conflicts(section_a, section_b):
-    for block_a in section_a:
-        for block_b in section_b:
+def option_conflicts(option_a, option_b):
+    for block_a in option_a:
+        for block_b in option_b:
             if time_conflicts(block_a, block_b):
                 return True
 
     return False
-
-math4a_lecture = Block(["M", "W", "F"], "1:00 PM", "1:50 PM", "Lecture")
-cmpsc16_lecture = Block(["M", "W"], "3:30 PM", "4:45 PM", "Lecture")
-cmpsc16_section = Block(["R"], "2:00 PM", "2:50 PM", "Section")
-
-math4a = Course("MATH 4A - Linear Algebra", "30189", [math4a_lecture])
-cmpsc16 = Course("CMPSC 16 - Problem Solving I", "08128", [cmpsc16_lecture, cmpsc16_section])
-
-math4a_lecture.time_to_minutes()
-cmpsc16_lecture.time_to_minutes()
-cmpsc16_section.time_to_minutes()
-
-overlap_block = Block(["M"], "1:30 PM", "2:20 PM", "Lecture")
-different_day_block = Block(["T"], "1:30 PM", "2:20 PM", "Lecture")
-touching_block = Block(["M"], "1:50 PM", "2:40 PM", "Lecture")
-same_time_block = Block(["W"], "1:00 PM", "1:50 PM", "Lecture")
-
-overlap_block.time_to_minutes()
-different_day_block.time_to_minutes()
-touching_block.time_to_minutes()
-same_time_block.time_to_minutes()
-
-print(time_conflicts(math4a_lecture, overlap_block))        #true
-print(time_conflicts(math4a_lecture, different_day_block))  #false
-print(time_conflicts(math4a_lecture, touching_block))       #false
-print(time_conflicts(math4a_lecture, same_time_block))      #true
-print(time_conflicts(math4a_lecture, cmpsc16_lecture))      #false
-print(time_conflicts(cmpsc16_lecture, cmpsc16_section))     #false
-
-section_a = [math4a_lecture]
-section_b = [cmpsc16_lecture, cmpsc16_section]
-section_c = [overlap_block]
-section_d = [different_day_block]
-section_e = [same_time_block]
-
-print(section_conflicts(section_a, section_b))  #false
-print(section_conflicts(section_a, section_c))  #true
-print(section_conflicts(section_a, section_d))  #false
-print(section_conflicts(section_a, section_e))  #true
