@@ -59,6 +59,17 @@ class Scheduler:
                     days[i].append(block)
 
         return days
+    
+    def score_days(self, schedule, preferredDays):
+        day_score = 0
+
+        for course_option in schedule:
+            for block in course_option:
+                for preferred_day in preferredDays:
+                    if preferred_day in block.days:
+                        day_score += 1
+
+        return day_score
                  
 class Course:
     def __init__(self, name, code, lectures, sections):
