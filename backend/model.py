@@ -37,8 +37,29 @@ class Scheduler:
                     return False
 
         return True
+    
+    def get_allScheduleBlocks(self, schedule):
+        allBlocks = []
+        
+        for course_option in schedule:
+            for block in course_option:
+                allBlocks.append(block)
+    
+    def sortByDays(self, schedule):
+        days = [[], [], [], [], []]
+        daysOfTheWeek = ["M", "T", "W", "R", "F"]
 
- 
+        allBlocks = self.get_allScheduleBlocks(schedule)
+
+        for i in range(len(daysOfTheWeek)):
+            day = daysOfTheWeek[i]
+
+            for block in allBlocks:
+                if day in block.days:
+                    days[i].append(block)
+
+        return days
+                 
 class Course:
     def __init__(self, name, code, lectures, sections):
         self.name = name
