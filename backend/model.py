@@ -45,7 +45,7 @@ class Scheduler:
             for block in course_option:
                 allBlocks.append(block)
     
-    def sortByDays(self, schedule):
+    def sort_by_days(self, schedule):
         days = [[], [], [], [], []]
         daysOfTheWeek = ["M", "T", "W", "R", "F"]
 
@@ -57,6 +57,9 @@ class Scheduler:
             for block in allBlocks:
                 if day in block.days:
                     days[i].append(block)
+
+        for day_blocks in days:
+            day_blocks.sort(key=lambda item: (item.startTime, item.endTime))
 
         return days
     
@@ -70,7 +73,39 @@ class Scheduler:
                         day_score += 1
 
         return day_score
-                 
+    
+    def score_timeRange(self, schedule, preferredStart, preferredEnd):
+        time_score = 0
+
+        for course_option in schedule:
+            for block in course_option:
+                if block.startTime >= preferredStart and block.endTime <= preferredEnd:
+                    time_score += len(block.days)
+        
+        return time_score
+    
+    def score_gap(self, schedule, preferredGap):
+        sortedSched = self.sort_by_days(schedule)
+
+        successful_gaps = 0
+        total_gaps = 0
+
+        for sorted_dayBlocks in sortedSched:
+            for i in range(len(sorted_dayBlocks) - 1):
+                current_block = sorted_dayBlocks[i]
+                next_block = sorted_dayBlocks[i + 1]
+
+                gap = next_block.startTime - current_block.endTime
+                total_gaps += 1
+
+                if gap <= preferredGap:
+                    successful_gaps += 1
+
+        if total_gaps == 0:
+            return 1.0
+
+        return successful_gaps / total_gaps
+
 class Course:
     def __init__(self, name, code, lectures, sections):
         self.name = name
