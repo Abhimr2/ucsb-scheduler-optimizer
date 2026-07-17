@@ -44,6 +44,8 @@ class Scheduler:
         for course_option in schedule:
             for block in course_option:
                 allBlocks.append(block)
+        
+        return allBlocks
     
     def sort_by_days(self, schedule):
         days = [[], [], [], [], []]
@@ -65,24 +67,30 @@ class Scheduler:
     
     def score_days(self, schedule, preferredDays):
         day_score = 0
+        total_score = 0
 
         for course_option in schedule:
             for block in course_option:
+                total_score += len(block.days)
+
                 for preferred_day in preferredDays:
                     if preferred_day in block.days:
                         day_score += 1
 
-        return day_score
+        return day_score / total_score
     
     def score_timeRange(self, schedule, preferredStart, preferredEnd):
         time_score = 0
+        total_score = 0
 
         for course_option in schedule:
             for block in course_option:
+                total_score += len(block.days)
+
                 if block.startTime >= preferredStart and block.endTime <= preferredEnd:
                     time_score += len(block.days)
         
-        return time_score
+        return time_score / total_score
     
     def score_gap(self, schedule, preferredGap):
         sortedSched = self.sort_by_days(schedule)
@@ -105,6 +113,21 @@ class Scheduler:
             return 1.0
 
         return successful_gaps / total_gaps
+    
+    def score_schedule(self, schedule, preferences):        
+        gapScore = self.score_gap(schedule, preferences["preferredGap"])
+        timeScore = self.score_timeRange(schedule, preferences["preferredStart"], preferences["preferredEnd"])
+        dayScore = self.score_days(schedule, preferences["preferredDays"])
+
+        dayScore *= preferences["dayWeight"]
+        timeScore *= preferences["timeWeight"]
+        gapScore *= preferences["gapWeight"]
+
+        totalWeight = preferences["dayWeight"] + preferences["timeWeight"] + preferences["gapWeight"]
+
+        weightedScore = dayScore + timeScore + gapScore
+
+        return weightedScore / totalWeight * 100
 
 class Course:
     def __init__(self, name, code, lectures, sections):
@@ -116,19 +139,56 @@ class Course:
     def create_options(self):
         options = []
 
+        if len(self.lectures) == 0 and len(self.sections) == 0:
+            return options
+
+        if len(self.sections) == 0:
+            for lecture in self.lectures:
+                options.append([lecture])
+
+            return options
+
+        if len(self.lectures) == 0:
+            for section in self.sections:
+                options.append([section])
+
+            return options
+
         for lecture in self.lectures:
             for section in self.sections:
                 options.append([lecture, section])
 
         return options
 
-    def print_course(self):
-        for block in self.meetings:
-            
-            block.convert_days()
 
+    def print_course(self):
+        all_blocks = self.lectures + self.sections
+
+        day_names = {
+            "M": "Monday",
+            "T": "Tuesday",
+            "W": "Wednesday",
+            "R": "Thursday",
+            "F": "Friday",
+        }
+
+        for block in all_blocks:
             for day in block.days:
-                print(self.name + " (" + self.code + ") has a " + block.type + " from " + str(block.startTime) + " to " + str(block.endTime) + " on " + day)
+                displayed_day = day_names.get(day, day)
+
+                print(
+                    self.name
+                    + " ("
+                    + self.code
+                    + ") has a "
+                    + block.type
+                    + " from "
+                    + str(block.startTime)
+                    + " to "
+                    + str(block.endTime)
+                    + " on "
+                    + displayed_day
+                )
 
 class Block:
     def __init__(self, days, startTime, endTime, type):
